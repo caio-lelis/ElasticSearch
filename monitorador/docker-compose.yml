@@ -1,0 +1,48 @@
+version: "3.5"
+
+services:
+  monitorador-de-logs:
+    container_name: monitorador-de-logs
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    depends_on:
+      - db
+    ports:
+      - "5000:${APP_PORT}"
+    volumes:
+      - ./jsondata:/home/jsondata
+
+  db:
+    container_name: db
+    image: postgres:13.2-alpine
+    env_file: .env
+    volumes:
+      - ./database:/docker-entrypoint-initdb.d
+    ports:
+      - "5003:${DB_PORT}"
+
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    environment:
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:7.10.0
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+
+volumes:
+  elasticsearch_data: {}
